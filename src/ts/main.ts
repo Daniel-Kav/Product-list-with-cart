@@ -1,3 +1,4 @@
+// TypeScript interfaces
 interface Dessert {
   name: string;
   category: string;
@@ -26,7 +27,6 @@ const DB_CONFIG = {
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_CONFIG.name, DB_CONFIG.version);
-    
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
       if (!db.objectStoreNames.contains(DB_CONFIG.stores.cart)) {
@@ -36,12 +36,10 @@ function openDB(): Promise<IDBDatabase> {
         db.createObjectStore(DB_CONFIG.stores.settings);
       }
     };
-    
     request.onsuccess = () => {
       console.log('Database opened successfully');
       resolve(request.result);
     };
-    
     request.onerror = () => {
       console.error('Error opening database:', request.error);
       reject(request.error);
@@ -55,14 +53,11 @@ function saveCartToDB(cart: Cart): Promise<void> {
       try {
         const tx = db.transaction(DB_CONFIG.stores.cart, 'readwrite');
         const store = tx.objectStore(DB_CONFIG.stores.cart);
-        
         store.put(cart, 'cart');
-        
         tx.oncomplete = () => {
           console.log('Cart saved successfully');
           resolve();
         };
-        
         tx.onerror = () => {
           console.error('Error saving cart:', tx.error);
           reject(tx.error);
@@ -84,12 +79,10 @@ function loadCartFromDB(): Promise<Cart> {
         const tx = db.transaction(DB_CONFIG.stores.cart, 'readonly');
         const store = tx.objectStore(DB_CONFIG.stores.cart);
         const request = store.get('cart');
-        
         request.onsuccess = () => {
           console.log('Cart loaded successfully');
           resolve(request.result || {});
         };
-        
         request.onerror = () => {
           console.error('Error loading cart:', request.error);
           reject(request.error);
@@ -114,14 +107,11 @@ function clearCartFromDB(): Promise<void> {
       try {
         const tx = db.transaction(DB_CONFIG.stores.cart, 'readwrite');
         const store = tx.objectStore(DB_CONFIG.stores.cart);
-        
         store.delete('cart');
-        
         tx.oncomplete = () => {
           console.log('Cart cleared successfully');
           resolve();
         };
-        
         tx.onerror = () => {
           console.error('Error clearing cart:', tx.error);
           reject(tx.error);
@@ -141,16 +131,54 @@ let allItems: Dessert[] = [];
 let totalCost: number = 0;
 
 // Initialize cart from IndexedDB on page load
-window.addEventListener('DOMContentLoaded', () => {
-  loadCartFromDB().then(storedCart => {
-    cart = storedCart;
-    loadData();
-    renderCart();
-  }).catch(error => {
-    console.error('Failed to initialize cart:', error);
-    loadData();
-  });
-});
+window.addEventListener('DOMContentLoaded', initializeApp);
+
+function initializeApp(): void {
+  // Load cart and data in parallel, then render everything
+  Promise.all([loadCartFromDB(), fetch('data.json').then(res => res.json())])
+    .then(([storedCart, data]: [Cart, Dessert[]]) => {
+      cart = storedCart;
+      allItems = data;
+
+      // Render product list
+      const container = document.querySelector<HTMLElement>('.desserts-container');
+      if (container) {
+        container.innerHTML = '';
+        allItems.forEach((dessert: Dessert) => {
+          container.innerHTML += 
+            `<div class="dessert" id='${dessert.name}'>
+              <div class="image-container">
+                <img src="${dessert.image.mobile}" alt="${dessert.category}" class="image">
+                <div class="add-to-cart" id='${dessert.name}'>
+                  <button class="add-to-cart-btn" onclick='addToCart("${dessert.name}")'>
+                    <img src="./assets/images/icon-add-to-cart.svg" alt="cart" class="add-to-cart-image">
+                    <p>Add to Cart</p>
+                  </button>
+                </div>
+              </div>
+              <div class="dessert-details">
+                <p class="category">${dessert.category}</p>
+                <p class="name">${dessert.name}</p>
+                <p class="price">$${dessert.price}</p>
+              </div>
+            </div>`;
+        });
+      }
+
+      // Update all buttons to reflect cart state
+      Object.keys(cart).forEach(itemName => {
+        updateButton(itemName);
+      });
+
+      // Render the cart with correct items and totals
+      renderCart();
+    })
+    .catch(error => {
+      console.error('Failed to initialize app:', error);
+      // Fallback: just load data
+      loadData();
+    });
+}
 
 function loadData(): void {
   fetch('data.json')
@@ -160,11 +188,9 @@ function loadData(): void {
       const container = document.querySelector<HTMLElement>('.desserts-container');
       if (!container) return;
       container.innerHTML = '';
-      
       data.forEach((dessert: Dessert) => {
         container.innerHTML += 
           `<div class="dessert" id='${dessert.name}'>
-  
             <div class="image-container">
               <img src="${dessert.image.mobile}" alt="${dessert.category}" class="image">
               <div class="add-to-cart" id='${dessert.name}'>
@@ -174,15 +200,19 @@ function loadData(): void {
                 </button>
               </div>
             </div>
-  
             <div class="dessert-details">
               <p class="category">${dessert.category}</p>
               <p class="name">${dessert.name}</p>
               <p class="price">$${dessert.price}</p>
             </div>
-  
           </div>`
       });
+
+      // --- Add this block to update all buttons after rendering ---
+      Object.keys(cart).forEach(itemName => {
+        updateButton(itemName);
+      });
+      // -----------------------------------------------------------
     })
 }
 
@@ -198,7 +228,7 @@ function addToCart(itemName: string): void {
 function minus(itemName: string): void {
   if (cart[itemName] > 1) {
     cart[itemName]--;
-    updateButton(itemName); // Update the button state first
+    updateButton(itemName);
   } else {
     delete cart[itemName];
     updateButton(itemName);
@@ -211,7 +241,7 @@ function minus(itemName: string): void {
 
 function plus(itemName: string): void {
   cart[itemName]++;
-  updateButton(itemName); // Update the button state first
+  updateButton(itemName);
   renderCart();
   saveCartToDB(cart).catch(error => {
     console.error('Failed to save cart after increasing quantity:', error);
@@ -229,7 +259,7 @@ function removeFromCart(itemName: string): void {
 
 function clearCart(): void {
   cart = {};
-  allItems.forEach(item => {
+  allItems.forEach((item: Dessert) => {
     updateButton(item.name);
   });
   renderCart();
@@ -243,21 +273,16 @@ function renderCart(): void {
     renderEmptyCart();
     return;
   }
-
   const cntr = document.querySelector<HTMLElement>('.cart-items');
   if (!cntr) return;
   cntr.innerHTML = '';
-
   const emptyCntr = document.querySelector<HTMLElement>('.empty-cart');
   if (emptyCntr) emptyCntr.innerHTML = '';
-
   for (let i in cart) {
     const count = cart[i];
-    const item = allItems.find(item => item.name === i);
+    const item = allItems.find((item: Dessert) => item.name === i);
     if (!item) continue;
-
     calcTotal();
-
     cntr.innerHTML += 
       `<div class="cart-item">
           <!--Item detaisl-->
@@ -280,7 +305,6 @@ function renderCart(): void {
   const amountDetails = document.querySelector<HTMLElement>('.amount-details');
   if (!amountDetails) return;
   amountDetails.innerHTML = '';
-
   amountDetails.innerHTML += 
     `<div class="order-total">
         <p>Order Total</p>
@@ -305,14 +329,11 @@ function order(): void {
   const cntr = document.querySelector<HTMLElement>('.order-details');
   if (!cntr) return;
   cntr.innerHTML = '';
-
   for (let i in cart) {
     const count = cart[i];
-    const item = allItems.find(item => item.name === i);
+    const item = allItems.find((item: Dessert) => item.name === i);
     if (!item) continue;
-
     calcTotal();
-
     cntr.innerHTML += 
       `<div class="cart-item">
           <!--Item detaisl-->
@@ -329,7 +350,6 @@ function order(): void {
   const orderTotal = document.querySelector<HTMLElement>('.confirm-order-total');
   if (!orderTotal) return;
   orderTotal.innerHTML = '';
-
   orderTotal.innerHTML += 
     `<div class="order-total">
         <p>Order Total</p>
@@ -344,6 +364,13 @@ function startNewOrder(): void {
   loadData();
   renderCart();
   saveCartToDB(cart);
+
+  // --- Add this block to update the cart count in the header ---
+  const totalElement = document.querySelector<HTMLElement>('#total');
+  if (totalElement) {
+    totalElement.textContent = '0';
+  }
+  // ------------------------------------------------------------
 }
 
 function renderEmptyCart(): void {
@@ -355,10 +382,8 @@ function renderEmptyCart(): void {
         <p>Your added items will appear here</p>
       </div>`;
   }
-
   const cartCntr = document.querySelector<HTMLElement>('.cart-items');
   if (cartCntr) cartCntr.innerHTML = '';
-
   const amountCntr = document.querySelector<HTMLElement>('.amount-details');
   if (amountCntr) amountCntr.innerHTML = '';
 }
@@ -366,7 +391,7 @@ function renderEmptyCart(): void {
 function calcTotal(): void {
   totalCost = 0;
   for (let i in cart) {
-    const item = allItems.find(item => item.name === i);
+    const item = allItems.find((item: Dessert) => item.name === i);
     if (!item) continue;
     totalCost += cart[i] * item.price;
   }
@@ -384,11 +409,9 @@ function updateButton(itemName: string): void {
   if (!cntr) return;
   const btn = cntr.querySelector<HTMLElement>('.add-to-cart');
   if (!btn) return;
-
   if (cart[itemName]) {
     const imgCntr = cntr.querySelector<HTMLElement>('.image');
     if (imgCntr) imgCntr.style.border = '2px solid hsl(14, 86%, 42%)';
-
     btn.innerHTML = 
       `<div class="control-btn">
           <button class="control" onclick="minus('${itemName}')">
@@ -399,14 +422,12 @@ function updateButton(itemName: string): void {
             <img src="./assets/images/icon-increment-quantity.svg" alt="plus">
           </button>
         </div>`;
-
     // Update the quantity in cart display if it exists
     const cartItem = document.querySelector(`.cart-item p[id="name"][innerHTML="${itemName}"]`)?.closest('.cart-item');
     if (cartItem) {
       const countElement = cartItem.querySelector('span[id="count"]');
       const subPriceElement = cartItem.querySelector('span[id="sub-price"]');
       const priceElement = cartItem.querySelector('span[id="price"]');
-      
       if (countElement) countElement.textContent = cart[itemName].toString();
       if (subPriceElement && priceElement) {
         const price = parseFloat(priceElement.textContent || '0');
@@ -422,7 +443,6 @@ function updateButton(itemName: string): void {
         <p>Add to Cart</p>
       </button>`;
   }
-  
   // Update total items count in cart header
   const totalElement = document.querySelector<HTMLElement>('#total');
   if (totalElement) {
@@ -432,17 +452,11 @@ function updateButton(itemName: string): void {
 }
 
 // Make functions available to inline event handlers
-// @ts-ignore
-window.addToCart = addToCart;
-// @ts-ignore
-window.minus = minus;
-// @ts-ignore
-window.plus = plus;
-// @ts-ignore
-window.clearItem = clearItem;
-// @ts-ignore
-window.order = order;
-// @ts-ignore
-window.startNewOrder = startNewOrder;
+(window as any).addToCart = addToCart;
+(window as any).minus = minus;
+(window as any).plus = plus;
+(window as any).clearItem = clearItem;
+(window as any).order = order;
+(window as any).startNewOrder = startNewOrder;
 
-loadData();
+loadData(); 
