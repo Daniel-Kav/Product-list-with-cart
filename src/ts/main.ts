@@ -12,9 +12,145 @@ interface Cart {
   [key: string]: number;
 }
 
+// IndexedDB Configuration
+const DB_CONFIG = {
+  name: 'dessertCartDB',
+  version: 2,
+  stores: {
+    cart: 'cart',
+    settings: 'settings'
+  }
+} as const;
+
+// Enhanced IndexedDB helpers
+function openDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_CONFIG.name, DB_CONFIG.version);
+    
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      if (!db.objectStoreNames.contains(DB_CONFIG.stores.cart)) {
+        db.createObjectStore(DB_CONFIG.stores.cart);
+      }
+      if (!db.objectStoreNames.contains(DB_CONFIG.stores.settings)) {
+        db.createObjectStore(DB_CONFIG.stores.settings);
+      }
+    };
+    
+    request.onsuccess = () => {
+      console.log('Database opened successfully');
+      resolve(request.result);
+    };
+    
+    request.onerror = () => {
+      console.error('Error opening database:', request.error);
+      reject(request.error);
+    };
+  });
+}
+
+function saveCartToDB(cart: Cart): Promise<void> {
+  return openDB().then(db => {
+    return new Promise<void>((resolve, reject) => {
+      try {
+        const tx = db.transaction(DB_CONFIG.stores.cart, 'readwrite');
+        const store = tx.objectStore(DB_CONFIG.stores.cart);
+        
+        store.put(cart, 'cart');
+        
+        tx.oncomplete = () => {
+          console.log('Cart saved successfully');
+          resolve();
+        };
+        
+        tx.onerror = () => {
+          console.error('Error saving cart:', tx.error);
+          reject(tx.error);
+        };
+      } catch (error) {
+        console.error('Error in saveCartToDB:', error);
+        reject(error);
+      } finally {
+        db.close();
+      }
+    });
+  });
+}
+
+function loadCartFromDB(): Promise<Cart> {
+  return openDB().then(db => {
+    return new Promise<Cart>((resolve, reject) => {
+      try {
+        const tx = db.transaction(DB_CONFIG.stores.cart, 'readonly');
+        const store = tx.objectStore(DB_CONFIG.stores.cart);
+        const request = store.get('cart');
+        
+        request.onsuccess = () => {
+          console.log('Cart loaded successfully');
+          resolve(request.result || {});
+        };
+        
+        request.onerror = () => {
+          console.error('Error loading cart:', request.error);
+          reject(request.error);
+        };
+      } catch (error) {
+        console.error('Error in loadCartFromDB:', error);
+        reject(error);
+      } finally {
+        db.close();
+      }
+    });
+  }).catch(error => {
+    console.error('Failed to load cart from IndexedDB:', error);
+    return {} as Cart;
+  });
+}
+
+// Clear cart from IndexedDB
+function clearCartFromDB(): Promise<void> {
+  return openDB().then(db => {
+    return new Promise<void>((resolve, reject) => {
+      try {
+        const tx = db.transaction(DB_CONFIG.stores.cart, 'readwrite');
+        const store = tx.objectStore(DB_CONFIG.stores.cart);
+        
+        store.delete('cart');
+        
+        tx.oncomplete = () => {
+          console.log('Cart cleared successfully');
+          resolve();
+        };
+        
+        tx.onerror = () => {
+          console.error('Error clearing cart:', tx.error);
+          reject(tx.error);
+        };
+      } catch (error) {
+        console.error('Error in clearCartFromDB:', error);
+        reject(error);
+      } finally {
+        db.close();
+      }
+    });
+  });
+}
+
 let cart: Cart = {};
 let allItems: Dessert[] = [];
 let totalCost: number = 0;
+
+// Initialize cart from IndexedDB on page load
+window.addEventListener('DOMContentLoaded', () => {
+  loadCartFromDB().then(storedCart => {
+    cart = storedCart;
+    loadData();
+    renderCart();
+  }).catch(error => {
+    console.error('Failed to initialize cart:', error);
+    loadData();
+  });
+});
 
 function loadData(): void {
   fetch('data.json')
@@ -51,28 +187,53 @@ function loadData(): void {
 }
 
 function addToCart(itemName: string): void {
-  console.log('added');
   cart[itemName] = 1;
   updateButton(itemName);
   renderCart();
+  saveCartToDB(cart).catch(error => {
+    console.error('Failed to save cart after adding item:', error);
+  });
 }
 
 function minus(itemName: string): void {
-  cart[itemName]--;
-  if (cart[itemName] <= 0) {
+  if (cart[itemName] > 1) {
+    cart[itemName]--;
+  } else {
     delete cart[itemName];
     updateButton(itemName);
-    renderCart();
-    return;
   }
-  updateButton(itemName);
   renderCart();
+  saveCartToDB(cart).catch(error => {
+    console.error('Failed to save cart after decreasing quantity:', error);
+  });
 }
 
 function plus(itemName: string): void {
   cart[itemName]++;
+  renderCart();
+  saveCartToDB(cart).catch(error => {
+    console.error('Failed to save cart after increasing quantity:', error);
+  });
+}
+
+function removeFromCart(itemName: string): void {
+  delete cart[itemName];
   updateButton(itemName);
   renderCart();
+  saveCartToDB(cart).catch(error => {
+    console.error('Failed to save cart after removing item:', error);
+  });
+}
+
+function clearCart(): void {
+  cart = {};
+  allItems.forEach(item => {
+    updateButton(item.name);
+  });
+  renderCart();
+  clearCartFromDB().catch(error => {
+    console.error('Failed to clear cart:', error);
+  });
 }
 
 function renderCart(): void {
@@ -180,6 +341,7 @@ function startNewOrder(): void {
   cart = {};
   loadData();
   renderCart();
+  saveCartToDB(cart);
 }
 
 function renderEmptyCart(): void {
@@ -212,6 +374,7 @@ function clearItem(itemName: string): void {
   delete cart[itemName];
   updateButton(itemName);
   renderCart();
+  saveCartToDB(cart);
 }
 
 function updateButton(itemName: string): void {
@@ -246,4 +409,3 @@ function updateButton(itemName: string): void {
 }
 
 loadData();
-renderCart();
