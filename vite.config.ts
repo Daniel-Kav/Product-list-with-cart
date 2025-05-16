@@ -3,7 +3,7 @@ import { resolve } from 'path'
 
 export default defineConfig({
   root: 'src',
-  base: './',
+  base: '/Product-list-with-cart/',
   server: {
     open: true
   },
