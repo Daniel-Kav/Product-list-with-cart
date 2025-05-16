@@ -12,11 +12,6 @@ interface Cart {
   [key: string]: number;
 }
 
-// Add this at the top of the file, after the interfaces
-function getAssetUrl(path: string): string {
-  return new URL(`../assets/${path}`, import.meta.url).href;
-}
-
 // IndexedDB Configuration
 const DB_CONFIG = {
   name: 'dessertCartDB',
@@ -158,7 +153,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function loadData(): void {
-  fetch(new URL('../data.json', import.meta.url).href)
+  fetch('data.json')
     .then(response => response.json())
     .then((data: Dessert[]) => {
       allItems = data;
@@ -166,14 +161,15 @@ function loadData(): void {
       if (!container) return;
       container.innerHTML = '';
       
-      data.forEach((dessert: Dessert) => {        container.innerHTML += 
+      data.forEach((dessert: Dessert) => {
+        container.innerHTML += 
           `<div class="dessert" id='${dessert.name}'>
   
             <div class="image-container">
-              <img src="${new URL(`../assets/images/${dessert.image.mobile}`, import.meta.url).href}" alt="${dessert.category}" class="image">
+              <img src="${dessert.image.mobile}" alt="${dessert.category}" class="image">
               <div class="add-to-cart" id='${dessert.name}'>
                 <button class="add-to-cart-btn" onclick='addToCart("${dessert.name}")'>
-                  <img src="${new URL('../assets/images/icon-add-to-cart.svg', import.meta.url).href}" alt="cart" class="add-to-cart-image">
+                  <img src="./assets/images/icon-add-to-cart.svg" alt="cart" class="add-to-cart-image">
                   <p>Add to Cart</p>
                 </button>
               </div>
@@ -275,10 +271,11 @@ function renderCart(): void {
           </div>
           <!--Clear button-->
           <div class="clear">
-            <button class="clear-btn" onclick="clearItem('${item.name}')">            <img src="${new URL('../assets/images/icon-remove-item.svg', import.meta.url).href}" alt="remove">
-          </button>
-        </div>
-      </div>`;
+            <button class="clear-btn" onclick="clearItem('${item.name}')">
+              <img src="./assets/images/icon-remove-item.svg" alt="remove">
+            </button>
+          </div>
+        </div>`;
   }
   const amountDetails = document.querySelector<HTMLElement>('.amount-details');
   if (!amountDetails) return;
@@ -288,9 +285,10 @@ function renderCart(): void {
     `<div class="order-total">
         <p>Order Total</p>
         <p id="totalCost">$<span>${totalCost}</span></p>
-      </div>      <!--Carbon Neutral-->
+      </div>
+      <!--Carbon Neutral-->
       <div class="carbon-neutral">
-        <img src="${new URL('../assets/images/icon-carbon-neutral.svg', import.meta.url).href}" alt="tree">
+        <img src="./assets/images/icon-carbon-neutral.svg" alt="tree">
         <p>This is a <span class='carb-neu-font'>carbon-neutral</span> delivery</p>
       </div>
       <!--Confirm Button-->
@@ -350,9 +348,10 @@ function startNewOrder(): void {
 
 function renderEmptyCart(): void {
   const cntr = document.querySelector<HTMLElement>('.empty-cart');
-  if (cntr) {    cntr.innerHTML = 
+  if (cntr) {
+    cntr.innerHTML = 
       `<div class="empty-cart">
-        <img src="${new URL('../assets/images/illustration-empty-cart.svg', import.meta.url).href}" alt="empty" >
+        <img src="./assets/images/illustration-empty-cart.svg" alt="empty" >
         <p>Your added items will appear here</p>
       </div>`;
   }
@@ -392,11 +391,12 @@ function updateButton(itemName: string): void {
 
     btn.innerHTML = 
       `<div class="control-btn">
-          <button class="control" onclick="minus('${itemName}')">            <img src="${new URL('../assets/images/icon-decrement-quantity.svg', import.meta.url).href}" alt="minus">
+          <button class="control" onclick="minus('${itemName}')">
+            <img src="./assets/images/icon-decrement-quantity.svg" alt="minus">
           </button>
           <p id="quantity" class="quantity">${cart[itemName]}</p>
           <button class="control" onclick="plus('${itemName}')">
-            <img src="${new URL('../assets/images/icon-increment-quantity.svg', import.meta.url).href}" alt="plus">
+            <img src="./assets/images/icon-increment-quantity.svg" alt="plus">
           </button>
         </div>`;
 
@@ -430,5 +430,19 @@ function updateButton(itemName: string): void {
     totalElement.textContent = totalItems.toString();
   }
 }
+
+// Make functions available to inline event handlers
+// @ts-ignore
+window.addToCart = addToCart;
+// @ts-ignore
+window.minus = minus;
+// @ts-ignore
+window.plus = plus;
+// @ts-ignore
+window.clearItem = clearItem;
+// @ts-ignore
+window.order = order;
+// @ts-ignore
+window.startNewOrder = startNewOrder;
 
 loadData();
