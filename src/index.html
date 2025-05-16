@@ -2,70 +2,127 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- displays site properly based on user's device -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/images/favicon-32x32.png">
-  <link rel="stylesheet" href="./css/style.css">
+
+  <!--Red Hat Text-->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Text:ital,wght@0,300..700;1,300..700&display=swap" rel="stylesheet">
   
-  <title>Frontend Mentor | Product list with cart</title>
+  <title>Product list with cart</title>
+  <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
-  <header>
-    <div class="logo"><span class="logo-circle"></span> Desserts</div>
-    <nav>
-      <ul>
-        <li><a href="#products">Products</a></li>
-      </ul>
-    </nav>
-    <div class="header-cart-icon" id="header-cart-icon">
-      <img src="./assets/images/icon-add-to-cart.svg" alt="Cart">
-      <span class="header-cart-count" id="header-cart-count">0</span>
-    </div>
-    <div class="burger" id="burger-menu">
-      <div></div><div></div><div></div>
-    </div>
-  </header>
-  <main>
-    <section id="products" class="product-list-section">
-      <h1 class="section-title">Our Desserts</h1>
-      <div id="product-list" class="product-list"></div>
-    </section>
-    <aside id="cart" class="cart-section">
-      <div class="cart-header">
-        <h2>Your Cart (<span id="cart-quantity">0</span>)</h2>
-        <button class="cart-close-btn" id="cart-close-btn" title="Close Cart">&times;</button>
+  <!--Container-->
+  <div class="container">
+    <div class="dessert-section">
+      
+      <div class="desserts-head">
+        <p>Desserts</p>
       </div>
-      <div id="cart-items" class="cart-items empty">
-        <img src="./assets/images/illustration-empty-cart.svg" alt="Empty cart illustration" class="empty-cart-img">
-        <p class="empty-cart-text">Your added items will appear here</p>
+  
+      <!--Desserts Container-->
+      <div class="desserts-container">
+        
+        <!-- <div class="dessert">
+          <div class="image-container">
+            <img src="./assets/images/image-waffle-mobile.jpg" alt="waffle" class="image">
+            <div class="add-to-cart">
+              <button class="add-to-cart-btn">
+                <img src="./assets/images/icon-add-to-cart.svg" alt="cart" class="add-to-cart-image">
+                <p>Add to Cart</p>
+              </button>
+            </div>
+          </div>
+          <div class="dessert-details">
+            <p class="category">Waffle</p>
+            <p class="name">Waffle with Berries</p>
+            <p class="price">$6.50</p>
+          </div>
+        </div> -->
+  
       </div>
-      <div class="cart-summary" id="cart-summary" style="display:none;">
-        <div class="cart-total-row">
-          <span>Total:</span>
-          <span id="cart-total">$0.00</span>
+
+    </div>
+
+    <div class="your-cart">
+      <div class="your-cart-head">
+        <p>Your Cart (<span id="total">0</span>)</p>
+      </div>
+      <div class="cart-container">
+        <div class="empty-cart">
+          
         </div>
-        <button id="checkout-btn" class="cta-button">Checkout</button>
+        <div class="cart-items">
+
+  
+          <div class="cart-item">
+            
+            
+            <!-- <div class="details">
+              <p id="name">Classic Tiraminu</p>
+              <div class="calculation-div">
+                <p class="count"><span id="count">1</span>x</p>
+                <p class="price-in-cart">@$<span id="price">5</span></p>
+                <p class="sub-price">$<span id="sub-price">5</span></p>
+              </div>
+            </div>
+  
+            <div class="clear">
+              <button class="clear-btn">
+                x
+              </button>
+            </div>
+          </div> -->
+  
+          <!--Order Total-->
+          </div>
+          
+          <!-- <div class="order-total">
+            <p>Order Total</p>
+            <p>$<span>46.50</span></p>
+          </div>
+
+          <div class="carbon-neutral">
+            <img src="./assets/images/icon-carbon-neutral.svg" alt="tree">
+            <p>This is a carbon-neutral delivery</p>
+          </div>
+          
+          <div class="confirm-order">
+            <button class="confirm-order-btn">
+              <p>Confirm Order</p>
+            </button>
+          </div> -->
+
+         </div>
+         <div class="amount-details">
+
+         </div>
+       </div>
+  </div>
+  </div>
+  <div class="order-confirmed">
+    <div class="order-confirmed-container">
+      <img src="./assets/images/icon-order-confirmed.svg" alt="confirm" >
+      <div>
+        <p style="font-size: 28px;font-weight: 700;margin: 6px 0px;">Order Confirmed</p>
+        <p style="font-size: 12px;margin: 0px; margin-bottom: 24px;">We hope you enjoy your food</p>
       </div>
-    </aside>
-    <section id="order-confirmation" class="order-confirmation-section" style="display:none;">
-      <img src="./assets/images/icon-order-confirmed.svg" alt="Order confirmed" class="order-confirmed-img">
-      <h2>Order Confirmed!</h2>
-      <p>Thank you for your purchase. Your delicious desserts are on their way!</p>
-      <button id="order-back-btn" class="cta-button">Back to Shop</button>
-    </section>
-  </main>
-  <footer>
-    <div class="footer-content">
-      <div class="footer-logo">Desserts</div>
-      <div class="footer-links">
-        <a href="#products">Products</a>
+      <div class="order-details">
+
+      </div>
+      <div class="confirm-order-total">
+
+      </div>
+      <div class="start-new-order">
+        <button onclick="startNewOrder()">
+          Start New Order
+        </button>
       </div>
     </div>
-    <div class="copyright">
-      Challenge by <a href="https://www.frontendmentor.io?ref=challenge">Frontend Mentor</a>. 
-      Coded by <a href="#">Your Name Here</a>.
-    </div>
-  </footer>
-  <script type="module" src="./ts/main.ts"></script>
+  </div>
+  <script src="./ts/main.ts"></script>
 </body>
 </html>
