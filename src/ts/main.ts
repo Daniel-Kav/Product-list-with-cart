@@ -1,161 +1,249 @@
-// Product, Cart, and UI logic for Product List with Cart
-interface Product {
-  image: { thumbnail: string; mobile: string; tablet: string; desktop: string };
+interface Dessert {
   name: string;
   category: string;
   price: number;
-}
-interface CartItem {
-  product: Product;
-  quantity: number;
-}
-
-const productListEl = document.getElementById('product-list') as HTMLElement;
-const cartItemsEl = document.getElementById('cart-items') as HTMLElement;
-const cartQuantityEl = document.getElementById('cart-quantity') as HTMLElement;
-const cartTotalEl = document.getElementById('cart-total') as HTMLElement;
-const cartSummaryEl = document.getElementById('cart-summary') as HTMLElement;
-const checkoutBtn = document.getElementById('checkout-btn') as HTMLButtonElement;
-const orderConfirmationEl = document.getElementById('order-confirmation') as HTMLElement;
-const orderBackBtn = document.getElementById('order-back-btn') as HTMLButtonElement;
-const headerCartIcon = document.getElementById('header-cart-icon') as HTMLElement;
-const headerCartCount = document.getElementById('header-cart-count') as HTMLElement;
-const cartDrawer = document.getElementById('cart') as HTMLElement;
-const cartCloseBtn = document.getElementById('cart-close-btn') as HTMLButtonElement;
-
-let products: Product[] = [];
-let cart: CartItem[] = [];
-
-// --- Fetch and Render Products ---
-async function loadProducts() {
-  const res = await fetch('./data.json');
-  products = await res.json();
-  renderProductList();
+  image: {
+    mobile: string;
+    [key: string]: string;
+  };
 }
 
-function renderProductList() {
-  productListEl.innerHTML = '';
-  products.forEach((product, idx) => {
-    const card = document.createElement('div');
-    card.className = 'product-card';
-    card.innerHTML = `
-      <img src="${product.image.thumbnail}" alt="${product.name}">
-      <div class="product-name">${product.name}</div>
-      <div class="product-category">${product.category}</div>
-      <div class="product-price">$${product.price.toFixed(2)}</div>
-      <button class="add-to-cart-btn" data-idx="${idx}">
-        <img src="./assets/images/icon-add-to-cart.svg" alt="Add to cart" style="width:18px;"> Add to Cart
-      </button>
-    `;
-    card.querySelector('.add-to-cart-btn')!.addEventListener('click', () => addToCart(idx));
-    productListEl.appendChild(card);
-  });
+interface Cart {
+  [key: string]: number;
 }
 
-// --- Cart Logic ---
-function addToCart(productIdx: number) {
-  const product = products[productIdx];
-  const found = cart.find(item => item.product.name === product.name);
-  if (found) {
-    found.quantity += 1;
-  } else {
-    cart.push({ product, quantity: 1 });
-  }
+let cart: Cart = {};
+let allItems: Dessert[] = [];
+let totalCost: number = 0;
+
+function loadData(): void {
+  fetch('data.json')
+    .then(response => response.json())
+    .then((data: Dessert[]) => {
+      allItems = data;
+      const container = document.querySelector<HTMLElement>('.desserts-container');
+      if (!container) return;
+      container.innerHTML = '';
+      
+      data.forEach((dessert: Dessert) => {
+        container.innerHTML += 
+          `<div class="dessert" id='${dessert.name}'>
+  
+            <div class="image-container">
+              <img src="${dessert.image.mobile}" alt="${dessert.category}" class="image">
+              <div class="add-to-cart" id='${dessert.name}'>
+                <button class="add-to-cart-btn" onclick='addToCart("${dessert.name}")'>
+                  <img src="./assets/images/icon-add-to-cart.svg" alt="cart" class="add-to-cart-image">
+                  <p>Add to Cart</p>
+                </button>
+              </div>
+            </div>
+  
+            <div class="dessert-details">
+              <p class="category">${dessert.category}</p>
+              <p class="name">${dessert.name}</p>
+              <p class="price">$${dessert.price}</p>
+            </div>
+  
+          </div>`
+      });
+    })
+}
+
+function addToCart(itemName: string): void {
+  console.log('added');
+  cart[itemName] = 1;
+  updateButton(itemName);
   renderCart();
 }
 
-function removeFromCart(productName: string) {
-  cart = cart.filter(item => item.product.name !== productName);
-  renderCart();
-}
-
-function updateCartQuantity(productName: string, delta: number) {
-  const item = cart.find(item => item.product.name === productName);
-  if (!item) return;
-  item.quantity += delta;
-  if (item.quantity <= 0) {
-    removeFromCart(productName);
-  } else {
+function minus(itemName: string): void {
+  cart[itemName]--;
+  if (cart[itemName] <= 0) {
+    delete cart[itemName];
+    updateButton(itemName);
     renderCart();
+    return;
   }
-}
-
-function openCartDrawer() {
-  cartDrawer.classList.add('open');
-}
-function closeCartDrawer() {
-  cartDrawer.classList.remove('open');
-}
-headerCartIcon.addEventListener('click', openCartDrawer);
-cartCloseBtn.addEventListener('click', closeCartDrawer);
-
-function renderCart() {
-  cartItemsEl.innerHTML = '';
-  if (cart.length === 0) {
-    cartItemsEl.classList.add('empty');
-    cartItemsEl.innerHTML = `
-      <img src="./assets/images/illustration-empty-cart.svg" alt="Empty cart illustration" class="empty-cart-img">
-      <p class="empty-cart-text">Your added items will appear here</p>
-    `;
-    cartSummaryEl.style.display = 'none';
-  } else {
-    cartItemsEl.classList.remove('empty');
-    cart.forEach(item => {
-      const el = document.createElement('div');
-      el.className = 'cart-item';
-      el.innerHTML = `
-        <img src="${item.product.image.thumbnail}" alt="${item.product.name}">
-        <div class="cart-item-details">
-          <div class="cart-item-name">${item.product.name}</div>
-          <div class="cart-item-price">$${item.product.price.toFixed(2)}</div>
-          <div class="cart-item-qty">
-            <button class="cart-item-qty-btn" title="Decrease">-</button>
-            <span>${item.quantity}</span>
-            <button class="cart-item-qty-btn" title="Increase">+</button>
-          </div>
-        </div>
-        <button class="cart-item-remove-btn" title="Remove">&times;</button>
-      `;
-      const [decBtn, incBtn] = el.querySelectorAll('.cart-item-qty-btn');
-      decBtn.addEventListener('click', () => updateCartQuantity(item.product.name, -1));
-      incBtn.addEventListener('click', () => updateCartQuantity(item.product.name, 1));
-      el.querySelector('.cart-item-remove-btn')!.addEventListener('click', () => removeFromCart(item.product.name));
-      cartItemsEl.appendChild(el);
-    });
-    cartSummaryEl.style.display = 'flex';
-  }
-  // Update cart quantity and total
-  const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cart.reduce((sum, item) => sum + item.quantity * item.product.price, 0);
-  cartQuantityEl.textContent = totalQty.toString();
-  cartTotalEl.textContent = `$${totalPrice.toFixed(2)}`;
-  headerCartCount.textContent = totalQty.toString();
-}
-
-// --- Checkout and Order Confirmation ---
-checkoutBtn.addEventListener('click', () => {
-  closeCartDrawer();
-  document.querySelector('main')!.scrollTo(0, 0);
-  (document.getElementById('products') as HTMLElement).style.display = 'none';
-  orderConfirmationEl.style.display = 'flex';
-  cart = [];
+  updateButton(itemName);
   renderCart();
-});
-orderBackBtn.addEventListener('click', () => {
-  (document.getElementById('products') as HTMLElement).style.display = '';
-  orderConfirmationEl.style.display = 'none';
-  openCartDrawer();
-});
-
-// --- Responsive Burger Menu (optional) ---
-const burgerMenu = document.getElementById('burger-menu');
-const nav = document.querySelector('nav ul');
-if (burgerMenu && nav) {
-  burgerMenu.addEventListener('click', () => {
-    nav.classList.toggle('nav-active');
-  });
 }
 
-// --- Initial Load ---
-loadProducts();
+function plus(itemName: string): void {
+  cart[itemName]++;
+  updateButton(itemName);
+  renderCart();
+}
+
+function renderCart(): void {
+  if (Object.keys(cart).length === 0) {
+    renderEmptyCart();
+    return;
+  }
+
+  const cntr = document.querySelector<HTMLElement>('.cart-items');
+  if (!cntr) return;
+  cntr.innerHTML = '';
+
+  const emptyCntr = document.querySelector<HTMLElement>('.empty-cart');
+  if (emptyCntr) emptyCntr.innerHTML = '';
+
+  for (let i in cart) {
+    const count = cart[i];
+    const item = allItems.find(item => item.name === i);
+    if (!item) continue;
+
+    calcTotal();
+
+    cntr.innerHTML += 
+      `<div class="cart-item">
+          <!--Item detaisl-->
+          <div class="details">
+            <p id="name">${item.name}</p>
+            <div class="calculation-div">
+              <p class="count"><span id="count">${count}</span>x</p>
+              <p class="price-in-cart">@$<span id="price">${item.price}</span></p>
+              <p class="sub-price">$<span id="sub-price">${count * item.price}</span></p>
+            </div>
+          </div>
+          <!--Clear button-->
+          <div class="clear">
+            <button class="clear-btn" onclick="clearItem('${item.name}')">
+              <img src="./assets/images/icon-remove-item.svg" alt="remove">
+            </button>
+          </div>
+        </div>`;
+  }
+  const amountDetails = document.querySelector<HTMLElement>('.amount-details');
+  if (!amountDetails) return;
+  amountDetails.innerHTML = '';
+
+  amountDetails.innerHTML += 
+    `<div class="order-total">
+        <p>Order Total</p>
+        <p id="totalCost">$<span>${totalCost}</span></p>
+      </div>
+      <!--Carbon Neutral-->
+      <div class="carbon-neutral">
+        <img src="./assets/images/icon-carbon-neutral.svg" alt="tree">
+        <p>This is a <span class='carb-neu-font'>carbon-neutral</span> delivery</p>
+      </div>
+      <!--Confirm Button-->
+      <div class="confirm-order">
+        <button class="confirm-order-btn" onclick="order()">
+          <p>Confirm Order</p>
+        </button>
+      </div>`;
+}
+
+function order(): void {
+  const orderConfirmed = document.querySelector<HTMLElement>('.order-confirmed');
+  if (orderConfirmed) orderConfirmed.style.display = 'flex';
+  const cntr = document.querySelector<HTMLElement>('.order-details');
+  if (!cntr) return;
+  cntr.innerHTML = '';
+
+  for (let i in cart) {
+    const count = cart[i];
+    const item = allItems.find(item => item.name === i);
+    if (!item) continue;
+
+    calcTotal();
+
+    cntr.innerHTML += 
+      `<div class="cart-item">
+          <!--Item detaisl-->
+          <div class="details">
+            <p id="name">${item.name}</p>
+            <div class="calculation-div">
+              <p class="count"><span id="count">${count}</span>x</p>
+              <p class="price-in-cart">@$<span id="price">${item.price}</span></p>
+              <p class="sub-price">$<span id="sub-price">${count * item.price}</span></p>
+            </div>
+          </div>
+        </div>`;
+  }
+  const orderTotal = document.querySelector<HTMLElement>('.confirm-order-total');
+  if (!orderTotal) return;
+  orderTotal.innerHTML = '';
+
+  orderTotal.innerHTML += 
+    `<div class="order-total">
+        <p>Order Total</p>
+        <p id="totalCost">$<span>${totalCost}</span></p>
+      </div>`;
+}
+
+function startNewOrder(): void {
+  const orderConfirmed = document.querySelector<HTMLElement>('.order-confirmed');
+  if (orderConfirmed) orderConfirmed.style.display = 'none';
+  cart = {};
+  loadData();
+  renderCart();
+}
+
+function renderEmptyCart(): void {
+  const cntr = document.querySelector<HTMLElement>('.empty-cart');
+  if (cntr) {
+    cntr.innerHTML = 
+      `<div class="empty-cart">
+        <img src="./assets/images/illustration-empty-cart.svg" alt="empty" >
+        <p>Your added items will appear here</p>
+      </div>`;
+  }
+
+  const cartCntr = document.querySelector<HTMLElement>('.cart-items');
+  if (cartCntr) cartCntr.innerHTML = '';
+
+  const amountCntr = document.querySelector<HTMLElement>('.amount-details');
+  if (amountCntr) amountCntr.innerHTML = '';
+}
+
+function calcTotal(): void {
+  totalCost = 0;
+  for (let i in cart) {
+    const item = allItems.find(item => item.name === i);
+    if (!item) continue;
+    totalCost += cart[i] * item.price;
+  }
+}
+
+function clearItem(itemName: string): void {
+  delete cart[itemName];
+  updateButton(itemName);
+  renderCart();
+}
+
+function updateButton(itemName: string): void {
+  const cntr = document.getElementById(itemName);
+  if (!cntr) return;
+  const btn = cntr.querySelector<HTMLElement>('.add-to-cart');
+  if (!btn) return;
+
+  if (cart[itemName]) {
+    const imgCntr = cntr.querySelector<HTMLElement>('.image');
+    if (imgCntr) imgCntr.style.border = '2px solid hsl(14, 86%, 42%)';
+
+    btn.innerHTML = 
+      `<div class="control-btn">
+          <button class="control" onclick="minus('${itemName}')">
+            <img src="./assets/images/icon-decrement-quantity.svg" alt="minus">
+          </button>
+          <p id="quantity" class="quantity">${cart[itemName]}</p>
+          <button class="control" onclick="plus('${itemName}')">
+            <img src="./assets/images/icon-increment-quantity.svg" alt="plus">
+          </button>
+        </div>`;
+  } else {
+    const imgCntr = cntr.querySelector<HTMLElement>('.image');
+    if (imgCntr) imgCntr.style.border = 'none';
+    btn.innerHTML = 
+      `<button class="add-to-cart-btn" onclick='addToCart("${itemName}")'>
+        <img src="./assets/images/icon-add-to-cart.svg" alt="cart" class="add-to-cart-image">
+        <p>Add to Cart</p>
+      </button>`;
+  }
+}
+
+loadData();
 renderCart();
