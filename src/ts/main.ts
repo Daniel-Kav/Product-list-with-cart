@@ -198,6 +198,7 @@ function addToCart(itemName: string): void {
 function minus(itemName: string): void {
   if (cart[itemName] > 1) {
     cart[itemName]--;
+    updateButton(itemName); // Update the button state first
   } else {
     delete cart[itemName];
     updateButton(itemName);
@@ -210,6 +211,7 @@ function minus(itemName: string): void {
 
 function plus(itemName: string): void {
   cart[itemName]++;
+  updateButton(itemName); // Update the button state first
   renderCart();
   saveCartToDB(cart).catch(error => {
     console.error('Failed to save cart after increasing quantity:', error);
@@ -397,6 +399,20 @@ function updateButton(itemName: string): void {
             <img src="./assets/images/icon-increment-quantity.svg" alt="plus">
           </button>
         </div>`;
+
+    // Update the quantity in cart display if it exists
+    const cartItem = document.querySelector(`.cart-item p[id="name"][innerHTML="${itemName}"]`)?.closest('.cart-item');
+    if (cartItem) {
+      const countElement = cartItem.querySelector('span[id="count"]');
+      const subPriceElement = cartItem.querySelector('span[id="sub-price"]');
+      const priceElement = cartItem.querySelector('span[id="price"]');
+      
+      if (countElement) countElement.textContent = cart[itemName].toString();
+      if (subPriceElement && priceElement) {
+        const price = parseFloat(priceElement.textContent || '0');
+        subPriceElement.textContent = (price * cart[itemName]).toString();
+      }
+    }
   } else {
     const imgCntr = cntr.querySelector<HTMLElement>('.image');
     if (imgCntr) imgCntr.style.border = 'none';
@@ -405,6 +421,13 @@ function updateButton(itemName: string): void {
         <img src="./assets/images/icon-add-to-cart.svg" alt="cart" class="add-to-cart-image">
         <p>Add to Cart</p>
       </button>`;
+  }
+  
+  // Update total items count in cart header
+  const totalElement = document.querySelector<HTMLElement>('#total');
+  if (totalElement) {
+    const totalItems = Object.values(cart).reduce((sum, count) => sum + count, 0);
+    totalElement.textContent = totalItems.toString();
   }
 }
 
