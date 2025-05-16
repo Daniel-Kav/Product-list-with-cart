@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- displays site properly based on user's device -->
+
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/images/favicon-32x32.png">
+  <link rel="stylesheet" href="./css/style.css">
+  
+  <title>Frontend Mentor | Product list with cart</title>
+</head>
+<body>
+  <header>
+    <div class="logo"><span class="logo-circle"></span> Desserts</div>
+    <nav>
+      <ul>
+        <li><a href="#products">Products</a></li>
+      </ul>
+    </nav>
+    <div class="header-cart-icon" id="header-cart-icon">
+      <img src="./assets/images/icon-add-to-cart.svg" alt="Cart">
+      <span class="header-cart-count" id="header-cart-count">0</span>
+    </div>
+    <div class="burger" id="burger-menu">
+      <div></div><div></div><div></div>
+    </div>
+  </header>
+  <main>
+    <section id="products" class="product-list-section">
+      <h1 class="section-title">Our Desserts</h1>
+      <div id="product-list" class="product-list"></div>
+    </section>
+    <aside id="cart" class="cart-section">
+      <div class="cart-header">
+        <h2>Your Cart (<span id="cart-quantity">0</span>)</h2>
+        <button class="cart-close-btn" id="cart-close-btn" title="Close Cart">&times;</button>
+      </div>
+      <div id="cart-items" class="cart-items empty">
+        <img src="./assets/images/illustration-empty-cart.svg" alt="Empty cart illustration" class="empty-cart-img">
+        <p class="empty-cart-text">Your added items will appear here</p>
+      </div>
+      <div class="cart-summary" id="cart-summary" style="display:none;">
+        <div class="cart-total-row">
+          <span>Total:</span>
+          <span id="cart-total">$0.00</span>
+        </div>
+        <button id="checkout-btn" class="cta-button">Checkout</button>
+      </div>
+    </aside>
+    <section id="order-confirmation" class="order-confirmation-section" style="display:none;">
+      <img src="./assets/images/icon-order-confirmed.svg" alt="Order confirmed" class="order-confirmed-img">
+      <h2>Order Confirmed!</h2>
+      <p>Thank you for your purchase. Your delicious desserts are on their way!</p>
+      <button id="order-back-btn" class="cta-button">Back to Shop</button>
+    </section>
+  </main>
+  <footer>
+    <div class="footer-content">
+      <div class="footer-logo">Desserts</div>
+      <div class="footer-links">
+        <a href="#products">Products</a>
+      </div>
+    </div>
+    <div class="copyright">
+      Challenge by <a href="https://www.frontendmentor.io?ref=challenge">Frontend Mentor</a>. 
+      Coded by <a href="#">Your Name Here</a>.
+    </div>
+  </footer>
+  <script type="module" src="./ts/main.ts"></script>
+</body>
+</html>
