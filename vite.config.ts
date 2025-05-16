@@ -3,7 +3,10 @@ import { resolve } from 'path'
 
 export default defineConfig({
   root: 'src',
-  base: '/Product-list-with-cart/',
+  base: './',
+  server: {
+    open: true
+  },
   build: {
     outDir: '../dist',
     emptyOutDir: true,
